@@ -1,4 +1,4 @@
-= Sand Box
+﻿= Sand Box
 
 ==============================================================
 == Inline markups :: idoption
@@ -48,7 +48,7 @@ Nothing is appears when file or plugins is not found.
 
 
 ==============================================================
-== Group::group
+== Group :: group
 
 
 
@@ -65,13 +65,17 @@ Following contents are grouped.
 (((test.jpg::width=100 height=100)))
 }}
 
+
+
 You can use some special group. section is one of it.
 
 {{section
 This grouped contents becomes section contents.
 }}
 
-Especialy //pre//, //kbd//, //samp///, //code// group's contents become a preformatted text, ~
+
+
+Especialy //pre//, //kbd//, //samp//, //code// group's contents become a preformatted text, ~
 and syntaxs are not converted.
 
 {{kbd
@@ -80,6 +84,8 @@ $ echo Unyalder!
 Unyalder!
 }}
 
+
+
 If you want to name special class, like this.
 
 {{code::javascript
@@ -87,6 +93,8 @@ int index = 0;
 <html>code</html>
 **bold**
 }}
+
+
 
 Heading syntax in //figure// special group becomes //figcaption//.
 
@@ -119,7 +127,7 @@ Inline group hasnt special name like //Block group//.
 
 
 ==============================================================
-== Table::table
+== Table :: table
 
 !| Header  !| Header !< Left
 || Default |= Center |> Right
@@ -155,7 +163,7 @@ Inline group hasnt special name like //Block group//.
 
 
 ==============================================================
-== Blockquote::blockquote
+== Blockquote :: blockquote
 
 > Blockquote text
 > You can use //KARAS sytanx// in blockquote.
@@ -165,16 +173,26 @@ Inline group hasnt special name like //Block group//.
 
 
 ==============================================================
-== Others::others
+== Others :: others
 
 If you want to get all of syntax or more details, visit ((http://www.lightweightmarkuplanguage.com))
 
-- Comment out is HERE! -> ## this text doesnt appeare. ##
-- If you want to disable to syntax, use //Backslash(\\)// mark.
--- \*\*This is escape sample\*\*.
-- Line break is like~
+=== Comment out :: commentout
+
+Comment out text is HERE! -> ## this text doesnt appeare. ##
+
+=== Escape
+
+If you want to disable to syntax, use //Backslash(\\)// mark. \*\*This is escape sample\*\*.
+
+=== Line break
+
+Line break is like~
 this.
-- You can use HTML element in KARAS document <b>like this</b>.
+
+=== HTML tag
+
+You can use HTML element in KARAS document <b>like this</b>.
 
 
 
