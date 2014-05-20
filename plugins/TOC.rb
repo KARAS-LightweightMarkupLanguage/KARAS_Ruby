@@ -29,7 +29,11 @@
 
 class TOC
     def self.action(text, options)
-        #match group index.
+        # Remove heading syntax in pre element.
+        tempText = String.new(text)
+        tempText = KARAS::replaceTextInPreElement(tempText, "=", "")
+
+        # match group index.
         mgiAllText = 0
         mgiMarks = 1
         mgiMarkedupText = 2
@@ -52,7 +56,7 @@ class TOC
         nextMatchIndex = 0
 
         while true
-            match = KARAS::RegexHeading.match(text, nextMatchIndex)
+            match = KARAS::RegexHeading.match(tempText, nextMatchIndex)
 
             if match == nil
                 previousLevel.times do
@@ -90,7 +94,9 @@ class TOC
                     itemText = markedupTexts[0]
 
                     if markedupTexts.length > 1
-                        itemText = "<a href=\"#" + markedupTexts[1].strip() + "\">" + itemText + "</a>"
+                        itemText = "<a href=\"#" + markedupTexts[1].strip() + "\">" +
+                                   itemText +
+                                   "</a>"
                     end
 
                     newText += itemText
