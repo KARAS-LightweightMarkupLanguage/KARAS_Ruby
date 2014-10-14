@@ -28,11 +28,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class NowEditing
-    def self.convert(markedupText, options)
+    def self.convert(options, markedupText)
         return "<b> Now Editing. </b>"
     end
 
-    def self.action(text, options)
+    def self.action(options, markedupText, text)
         return "\n<p><span style=\"font-size:300%;\"><b> Now Editing. </b></span></p>\n"
     end
 end

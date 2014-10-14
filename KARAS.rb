@@ -77,8 +77,8 @@ module KARAS extend self
         Regexp.new("(\\\\*)((\\[{2,}[\u0020\u00A0]*\\[*)|(\\]{2,}[\u0020\u00A0]*\\]*))")
     RegexCommentOut = 
         Regexp.new("(\\\\*)(\#{2,})", Regexp::MULTILINE)
-    RegexsplitOption = 
-        Regexp.new("(\\\\*)(::)", Regexp::MULTILINE)
+    RegexSplitOption = 
+        Regexp.new("(\\\\*)(:{2,3})", Regexp::MULTILINE)
 
     #Other
     RegexEscape = 
@@ -177,7 +177,7 @@ module KARAS extend self
 
 
     public
-    def convert(text, pluginDirectory = KARAS::PluginDirectory)
+    def convert(text, pluginDirectory, startLevelOfHeading)
         escapeCode = KARAS::generateSafeEscapeCode(text, KARAS::DefaultEscapeCode)
         lineBreakCode = KARAS::getDefaultLineBreakCode(text)
         text = text.gsub("\r\n", "\n")
@@ -213,7 +213,7 @@ module KARAS extend self
         text = KARAS::convertTable(text)
         text = KARAS::convertList(text)
         text = KARAS::convertDefList(text)
-        text = KARAS::convertHeading(text)
+        text = KARAS::convertHeading(text, startLevelOfHeading)
         text = KARAS::convertBlockLink(text)
         text = KARAS::convertParagraph(text)
         text = KARAS::reduceBlankLine(text)
@@ -391,7 +391,7 @@ module KARAS extend self
     end
 
     public
-    def splitOption(text)
+    def splitOption(text, isSpecialOption)
         #match group index.
         #mgiAllText = 0
         mgiEscapes = 1
@@ -400,11 +400,17 @@ module KARAS extend self
         match = nil
         nextMatchIndex = 0
 
+        isSpecialOption = false;
+
+        if text == nil
+            return [], false
+        end
+
         while true
-            match = KARAS::RegexsplitOption.match(text, nextMatchIndex)
+            match = KARAS::RegexSplitOption.match(text, nextMatchIndex)
 
             if match == nil
-                return [text.strip()]
+                return [text.strip()], false
             end
 
             if match[mgiEscapes].length % 2 == 1
@@ -412,31 +418,47 @@ module KARAS extend self
                 next
             end
 
+            if match[mgiMarks].length == 3
+                isSpecialOption = true
+            else
+                isSpecialOption = false
+            end
+
             return [
                         text[0, match.begin(mgiMarks)].strip(),
                         text[match.end(mgiMarks)..text.length].strip()
-                   ]
+                   ],
+                   isSpecialOption
         end
     end
 
     public
-    def splitOptions(text)
-        textList = Array.new()
+    def splitOptions(text, hasSpecialOption)
+        options = Array.new()
         restText = text.strip()
+        hasSpecialOption = false
 
         while true
-            splitTexts = KARAS::splitOption(restText)
+            isSpecialOption = false
+            splitResult, isSpecialOption = KARAS::splitOption(restText, isSpecialOption) 
 
-            if splitTexts.length == 1
-                textList.push(restText)
+            if splitResult.length == 1
+                options.push(restText)
                 break
             end
 
-            textList.push(splitTexts[0])
-            restText = splitTexts[1]
+            if isSpecialOption == true
+                options.push(splitResult[0])
+                options.push(splitResult[1])
+                hasSpecialOption = true
+                break;
+            end
+
+            options.push(splitResult[0])
+            restText = splitResult[1]
         end
 
-        return textList
+        return options, hasSpecialOption
     end
 
 
@@ -596,35 +618,39 @@ module KARAS extend self
 
     private
     def constructPluginText(text, markedupText, openMarks, closeMarks, pluginManager)
-        markedupTexts = KARAS::splitOptions(markedupText)
+        hasSpecialOption = false
+        markedupTexts, hasSpecialOption = KARAS::splitOptions(markedupText, hasSpecialOption);
+        markedupText = nil;
         pluginName = markedupTexts[0]
         options = Array.new()
 
-        if openMarks.length > 2 && closeMarks.length > 2
-            if markedupTexts.length > 1
-                options = markedupTexts[1..(markedupTexts.length - 1)]
-            end
+        #Remove plugin name from option.
+        if markedupTexts.length > 1
+            markedupTexts.shift;
+            options = markedupTexts
+        end
 
+        if hasSpecialOption == true
+            markedupText = options[options.length - 1]
+            options.pop();
+        end
+
+        if openMarks.length > 2 && closeMarks.length > 2
             return constructActionTypePluginText(pluginManager,
                                                  pluginName,
-                                                 text,
-                                                 options)
+                                                 options,
+                                                 markedupText,
+                                                 text)
         else
-            markedupText = markedupTexts[markedupTexts.length - 1]
-
-            if markedupTexts.length > 2
-                options = markedupTexts[1..(markedupTexts.length - 2)]
-            end
-
             return constructConvertTypePluginText(pluginManager,
                                                   pluginName,
-                                                  markedupText,
-                                                  options)
+                                                  options,
+                                                  markedupText)
         end
     end
 
     private
-    def constructConvertTypePluginText(pluginManager, pluginName, markedupText, options)
+    def constructActionTypePluginText(pluginManager, pluginName, options, markedupText, text)
         plugin = pluginManager.getPlugin(pluginName)
 
         if plugin == nil
@@ -632,14 +658,14 @@ module KARAS extend self
         end
 
         begin
-            return plugin.convert(markedupText, options)
+            return  plugin.action(options, markedupText, text)
         rescue
             return " Plugin \"" + pluginName + "\" has wrong. "
         end
     end
 
     private
-    def constructActionTypePluginText(pluginManager, pluginName, text, options)
+    def constructConvertTypePluginText(pluginManager, pluginName, options, markedupText)
         plugin = pluginManager.getPlugin(pluginName)
 
         if plugin == nil
@@ -647,7 +673,7 @@ module KARAS extend self
         end
 
         begin
-            return  plugin.action(text, options)
+            return plugin.convert(options, markedupText)
         rescue
             return " Plugin \"" + pluginName + "\" has wrong. "
         end
@@ -771,7 +797,8 @@ module KARAS extend self
         blockGroupMatch.index = index
         blockGroupMatch.length = textLength
 
-        options = KARAS::splitOptions(optionText)
+        hasSpecialOption = false
+        options, hasSpecialOption = KARAS::splitOptions(optionText, hasSpecialOption)
 
         if options.length > 0
             groupType = options[0]
@@ -857,7 +884,9 @@ module KARAS extend self
                 #Note, it is important to convert inline markups first,
                 #to convert inline markup's options first.
                 markedupText = KARAS::convertInlineMarkup(match[mgiMarkedupText])
-                markedupTexts = KARAS::splitOptions(markedupText)
+                hasSpecialOption = false;
+                markedupTexts, hasSpecialOption =
+                    KARAS::splitOptions(markedupText, hasSpecialOption)
                 id = ""
 
                 if markedupTexts.length > 1
@@ -1667,7 +1696,8 @@ module KARAS extend self
     private
     def constructListItemText(listItemText)
         listItemText = KARAS::convertInlineMarkup(listItemText)
-        listItemTexts = KARAS::splitOption(listItemText)
+        isSpecialOption = false
+        listItemTexts, isSpecialOption = KARAS::splitOption(listItemText, isSpecialOption)
 
         if listItemTexts.length > 1
             listItemText = " value=\"" + listItemTexts[1] + "\">"
@@ -1768,7 +1798,7 @@ module KARAS extend self
     end
 
     public
-    def convertHeading(text)
+    def convertHeading(text, startLevelOfHeading)
         #match group index.
         mgiAllText = 0
         mgiMarks = 1
@@ -1789,6 +1819,7 @@ module KARAS extend self
 
             newText = ""
             level = match[mgiMarks].length
+            level = level + startLevelOfHeading - 1
 
             if level >= maxLevelOfHeading + 1
                 newText = KARAS::encloseWithLineBreak("<hr>")
@@ -1796,7 +1827,8 @@ module KARAS extend self
                 #Note, it is important to convert inline markups first,
                 #to convert inline markup's options first.
                 markedupText = KARAS::convertInlineMarkup(match[mgiMarkedupText])
-                markedupTexts = KARAS::splitOption(markedupText)
+                isSpecialOption = false
+                markedupTexts, isSpecialOption = KARAS::splitOption(markedupText, isSpecialOption)
                 id = ""
 
                 if markedupTexts.length > 1
@@ -2181,7 +2213,8 @@ module KARAS extend self
 
     private
     def constructLinkText(markedupText, newText, openMarks, closeMarks)
-        markedupTexts = KARAS::splitOption(markedupText)
+        isSpecialOption = false
+        markedupTexts, isSpecialOption = KARAS::splitOption(markedupText, isSpecialOption)
         url = markedupTexts[0]
 
         if openMarks.length >= 5 && closeMarks.length >= 5
@@ -2363,7 +2396,8 @@ module KARAS extend self
 
     private
     def constructInlineGroupText(markedupText, newText, openMarks, closeMarks)
-        markedupTexts = KARAS::splitOption(markedupText)
+        isSpecialOption = false
+        markedupTexts, isSpecialOption = KARAS::splitOption(markedupText, isSpecialOption)
         idClass = ""
 
         if openMarks.length >= 3 && closeMarks.length >= 3
@@ -2372,12 +2406,16 @@ module KARAS extend self
             idClass = " class=\""
         end
 
-        if markedupTexts.length > 1
+        if markedupTexts[0].length == 0
+            idClass = ""
+        else
             idClass += markedupTexts[0] + "\""
+        end
+
+        if markedupTexts.length > 1
             newText = markedupTexts[1]
         else
-            newText = markedupTexts[0]
-            idClass = ""
+            newText = ""
         end
 
          markDiff = openMarks.length - closeMarks.length
@@ -2409,7 +2447,8 @@ module KARAS extend self
         if openMatch.type == KARAS::InlineMarkupTypeSupRuby
             openTag = "<ruby>"
             closeTag = "</ruby>"
-            markedupTexts = KARAS::splitOptions(markedupText)
+            hasSpecialOption = false
+            markedupTexts, hasSpecialOption = KARAS::splitOptions(markedupText, hasSpecialOption)
             markedupText = markedupTexts[0]
 
             1.step(markedupTexts.length - 1, 2) do |i|

@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class Mark
-    def self.convert(markedupText, options)
+    def self.convert(options, markedupText)
         color = ""
 
         if options.length > 0

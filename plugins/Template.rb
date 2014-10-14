@@ -28,16 +28,16 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class Template
-    def self.convert(markedupText, options)
-        # Markup syntax is this. "[[plugin::option1::option2…::markedupText]]"
+    def self.convert(options, markedupText)
+        # Markup syntax is this. "[[plugin::option1::option2…:::markedupText]]"
         # Markedup text(and the syntax) in original text will be removed,
         # and insert return text there.
         # If you wont insert anything text, you have to return ""(empty string).
         return markedupText
     end
 
-    def self.action(text, options)
-        # Markup syntax is this. "[[[plugin::option1::option2…]]]"
+    def self.action(options, markedupText, text)
+        # Markup syntax is this. "[[[plugin::option1::option2…:::markedupText]]]"
         # "text" is all of the original text.
         # Markedup text(and the syntax) in original text will be removed,
         # and insert return text there.

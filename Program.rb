@@ -34,7 +34,7 @@ text = fileReader.read()
 fileReader.close()
 
 startTime = Time.now.to_f() * 1000.0
-text = KARAS::convert(text)
+text = KARAS::convert(text, KARAS::PluginDirectory, 1)
 time = Time.now.to_f() * 1000.0 - startTime
 
 puts(text)

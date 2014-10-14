@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class TOC
-    def self.action(text, options)
+    def self.action(options, markedupText, text)
         # Remove heading syntax in pre element.
         tempText = String.new(text)
         tempText = KARAS::replaceTextInPreElement(tempText, "=", "")
@@ -90,7 +90,8 @@ class TOC
                     end
 
                     markedupText = KARAS.convertInlineMarkup(match[mgiMarkedupText])
-                    markedupTexts = KARAS.splitOptions(markedupText)
+                    hasSpecialOption = false
+                    markedupTexts, hasSpecialOption = KARAS.splitOptions(markedupText, hasSpecialOption)
                     itemText = markedupTexts[0]
 
                     if markedupTexts.length > 1

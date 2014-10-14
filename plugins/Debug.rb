@@ -28,11 +28,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class Debug
-    def self.convert(markedupText, options)
+    def self.convert(options, markedupText)
         return markedupText
     end
 
-    def self.action(text, options)
+    def self.action(options, markedupText, text)
         return options[0].to_str()
     end
 end
