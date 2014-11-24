@@ -1916,7 +1916,7 @@ module KARAS extend self
 
             if match[mgiLTMarks].length == 1
                 #Note, it is important to exclude line breaks (like \n).
-                nextMatchIndex = match.begin(mgiAllText) + match[mgiMarkedupText].length
+                nextMatchIndex = match.begin(mgiMarkedupText) + match[mgiMarkedupText].length
                 next
             end
 
